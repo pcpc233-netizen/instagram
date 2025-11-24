@@ -1,0 +1,176 @@
+/* NEXUS OS 전용 스타일시트 */
+
+:root {
+  --nexus-bg: #050505;       /* 깊은 검정 */
+  --nexus-primary: #00ff41;  /* 터미널 그린 */
+  --nexus-secondary: #00ccff; /* 사이버 블루 */
+  --nexus-alert: #ff3333;    /* 경고 레드 */
+  --glass-panel: rgba(20, 20, 20, 0.85);
+}
+
+.nexus-container {
+  background-color: var(--nexus-bg);
+  color: var(--nexus-primary);
+  font-family: 'Courier New', Courier, monospace; /* 타자기/코딩 폰트 필수 */
+  padding: 2rem;
+  min-height: 100vh;
+  background-image: 
+    linear-gradient(rgba(0, 255, 65, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 65, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px; /* 그리드 패턴 배경 */
+}
+
+.nexus-panel {
+  background: var(--glass-panel);
+  border: 1px solid var(--nexus-primary);
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+}
+
+.panel-title {
+  border-bottom: 1px solid var(--nexus-primary);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--nexus-primary);
+}
+
+.value-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem 0;
+}
+
+.value-row .label {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.value.highlight {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--nexus-secondary);
+  text-shadow: 0 0 10px var(--nexus-secondary);
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.sub-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.stat-box {
+  background: rgba(0, 255, 65, 0.05);
+  border: 1px solid rgba(0, 255, 65, 0.2);
+  padding: 1rem;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.stat-box .label {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.stat-box .value {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--nexus-primary);
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(0, 255, 65, 0.1);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.dot.green {
+  background-color: var(--nexus-primary);
+  box-shadow: 0 0 10px var(--nexus-primary);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.log-container {
+  max-height: 300px;
+  overflow-y: auto;
+  font-size: 0.85rem;
+}
+
+.log-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.log-container::-webkit-scrollbar-track {
+  background: rgba(0, 255, 65, 0.1);
+}
+
+.log-container::-webkit-scrollbar-thumb {
+  background: var(--nexus-primary);
+  border-radius: 3px;
+}
+
+.log-item {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-bottom: 0.3rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px dashed #333;
+  font-family: 'Courier New', Courier, monospace;
+  color: var(--nexus-primary);
+}
+
+/* 깜빡이는 커서 효과 */
+.cursor {
+  animation: blink 1s infinite;
+  color: var(--nexus-secondary);
+  font-weight: bold;
+  margin-right: 0.5rem;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .nexus-container {
+    padding: 1rem;
+  }
+
+  .value.highlight {
+    font-size: 1.5rem;
+  }
+
+  .sub-stats {
+    grid-template-columns: 1fr;
+  }
+}
