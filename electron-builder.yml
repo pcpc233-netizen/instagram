@@ -1,0 +1,37 @@
+appId: com.cardflow.desktop
+productName: CardFlow
+copyright: CardFlow
+
+directories:
+  output: C:\cardflow-release
+  buildResources: build-resources
+
+files:
+  - electron/**
+  - node_modules/**
+  - package.json
+
+extraResources:
+  - from: dist
+    to: dist
+    filter:
+      - "**/*"
+  - from: .env
+    to: .env
+
+win:
+  target:
+    - target: nsis
+      arch: x64
+    - target: portable
+      arch: x64
+
+nsis:
+  oneClick: true
+  perMachine: false
+  createDesktopShortcut: true
+  shortcutName: CardFlow
+
+mac:
+  target: dmg
+  category: public.app-category.productivity

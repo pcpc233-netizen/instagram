@@ -1,512 +1,461 @@
 import { useState, useEffect } from 'react';
-import { Bus, Search, TrendingUp, Clock, MapPin, Activity, Train, Plane, Car, Ship, Zap } from 'lucide-react';
-import ServiceDetail from './components/ServiceDetail';
-import LongtailContentPage from './components/LongtailContentPage';
-import { supabase } from './lib/supabase';
-import { Service } from './lib/types';
+import {
+  LayoutTemplate, Sparkles, ImagePlus, Share2,
+  ArrowRight, Download, Zap, Globe, Check,
+} from 'lucide-react';
+import { CardNewsApp } from './cardnews/CardNewsApp';
+import { TEMPLATE_MAP } from './cardnews/templates';
 
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  icon: string;
-  description: string;
+/* ─── demo data for template previews ─── */
+const DEMO_SLIDE = {
+  id: 'demo',
+  type: 'cover' as const,
+  title: '오늘의\n핵심 트렌드',
+  body: '당신이 놓친 정보를\n한눈에 정리했어요',
+};
+
+const TEMPLATES: Array<{
+  id: keyof typeof TEMPLATE_MAP;
+  accent: string;
+  label: string;
+}> = [
+  { id: 'minimal-white', accent: '#6366f1', label: '미니멀 화이트' },
+  { id: 'dark-premium',  accent: '#a78bfa', label: '다크 프리미엄' },
+  { id: 'pastel-soft',   accent: '#ec4899', label: '파스텔 소프트' },
+  { id: 'bold-type',     accent: '#f97316', label: '볼드 타입'     },
+];
+
+const FEATURES = [
+  {
+    icon: Sparkles,
+    title: 'AI 카피 자동 생성',
+    desc: '주제 한 줄로 전체 슬라이드 내용을\nClaude AI가 자동 작성합니다.',
+    color: '#818cf8',
+    bg: 'rgba(99,102,241,0.1)',
+  },
+  {
+    icon: Globe,
+    title: '블로그 URL 변환',
+    desc: '티스토리·네이버·브런치 URL만\n붙여도 카드뉴스로 자동 변환됩니다.',
+    color: '#22d3ee',
+    bg: 'rgba(34,211,238,0.1)',
+  },
+  {
+    icon: ImagePlus,
+    title: 'AI 배경 이미지',
+    desc: 'DALL-E 3로 슬라이드에 맞는\n고퀄 배경을 자동 생성합니다.',
+    color: '#c084fc',
+    bg: 'rgba(192,132,252,0.1)',
+  },
+  {
+    icon: Download,
+    title: '1080px 고화질 저장',
+    desc: '인스타그램 최적화 사이즈로\n전체 슬라이드를 ZIP으로 저장합니다.',
+    color: '#34d399',
+    bg: 'rgba(52,211,153,0.1)',
+  },
+  {
+    icon: Share2,
+    title: 'Buffer 원클릭 발행',
+    desc: '완성된 카드뉴스를 Buffer로\n바로 예약·발행합니다.',
+    color: '#fb923c',
+    bg: 'rgba(251,146,60,0.1)',
+  },
+  {
+    icon: Zap,
+    title: '4종 프리미엄 템플릿',
+    desc: '미니멀·다크·파스텔·볼드 등\n완성도 높은 디자인을 제공합니다.',
+    color: '#fb7185',
+    bg: 'rgba(251,113,133,0.1)',
+  },
+];
+
+const STEPS = [
+  {
+    num: '01',
+    title: '주제 or URL 입력',
+    desc: '키워드를 입력하거나\n블로그 URL을 붙여넣으세요',
+    color: '#6366f1',
+  },
+  {
+    num: '02',
+    title: 'AI 자동 완성',
+    desc: 'Claude AI가 전체 슬라이드\n내용을 자동으로 작성합니다',
+    color: '#8b5cf6',
+  },
+  {
+    num: '03',
+    title: '저장 & 발행',
+    desc: '1080px PNG로 저장하거나\nBuffer로 바로 발행하세요',
+    color: '#06b6d4',
+  },
+];
+
+/* ─── Landing page component ─── */
+function LandingPage({ onStart }: { onStart: () => void }) {
+  const THUMB = 260;
+  const scale = THUMB / 1080;
+
+  return (
+    <div
+      style={{ background: '#06060c' }}
+      className="min-h-screen text-white overflow-x-hidden"
+    >
+      {/* ── NAV ── */}
+      <nav
+        style={{ background: 'rgba(6,6,12,0.85)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 backdrop-blur-xl"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+            <LayoutTemplate size={17} className="text-white" />
+          </div>
+          <span className="font-black text-xl tracking-tight">CardFlow</span>
+          <span
+            className="text-xs font-semibold px-2 py-0.5 rounded-full ml-1"
+            style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.25)' }}
+          >
+            AI
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onStart}
+            className="flex items-center gap-2 text-white/60 hover:text-white text-sm font-medium transition-colors"
+          >
+            에디터 열기
+          </button>
+          <button
+            onClick={onStart}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:-translate-y-0.5"
+            style={{
+              background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+              boxShadow: '0 4px 20px rgba(99,102,241,0.35)',
+            }}
+          >
+            무료로 시작
+            <ArrowRight size={13} />
+          </button>
+        </div>
+      </nav>
+
+      {/* ── HERO ── */}
+      <section className="relative pt-36 pb-20 px-8 flex flex-col items-center text-center overflow-hidden">
+        {/* ambient glow */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div style={{
+            position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)',
+            width: 900, height: 500,
+            background: 'radial-gradient(ellipse, rgba(99,102,241,0.18) 0%, transparent 70%)',
+            filter: 'blur(40px)',
+          }} />
+          <div style={{
+            position: 'absolute', top: '30%', left: '20%',
+            width: 400, height: 300,
+            background: 'radial-gradient(ellipse, rgba(139,92,246,0.12) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+          }} />
+        </div>
+
+        {/* badge */}
+        <div
+          className="relative inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold mb-8"
+          style={{
+            background: 'rgba(99,102,241,0.12)',
+            border: '1px solid rgba(99,102,241,0.28)',
+            color: '#818cf8',
+          }}
+        >
+          <Sparkles size={13} />
+          Claude AI 기반 카드뉴스 자동화
+        </div>
+
+        {/* headline */}
+        <h1 className="relative font-black tracking-tighter leading-[1.05] mb-6 max-w-4xl"
+          style={{ fontSize: 'clamp(2.8rem, 6vw, 5rem)' }}>
+          <span style={{
+            background: 'linear-gradient(160deg, #ffffff 0%, rgba(255,255,255,0.55) 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}>
+            인스타 카드뉴스,
+          </span>
+          <br />
+          <span style={{
+            background: 'linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #fb7185 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}>
+            AI가 5분에 완성
+          </span>
+        </h1>
+
+        <p className="relative text-xl leading-relaxed mb-10 max-w-2xl"
+          style={{ color: 'rgba(255,255,255,0.45)' }}>
+          주제 입력 하나로 Claude AI가 전체 슬라이드를 작성하고,<br />
+          1080px 고화질 PNG 저장 또는 Buffer 자동 발행까지.
+        </p>
+
+        {/* CTA buttons */}
+        <div className="relative flex flex-wrap items-center justify-center gap-4 mb-6">
+          <button
+            onClick={onStart}
+            className="flex items-center gap-2.5 px-9 py-4 rounded-2xl text-white font-bold text-lg transition-all hover:-translate-y-0.5"
+            style={{
+              background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+              boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
+            }}
+          >
+            <Sparkles size={18} />
+            지금 무료로 시작
+          </button>
+          <button
+            onClick={onStart}
+            className="flex items-center gap-2 px-9 py-4 rounded-2xl font-semibold text-lg transition-all hover:-translate-y-0.5"
+            style={{
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: 'rgba(255,255,255,0.8)',
+            }}
+          >
+            에디터 둘러보기
+            <ArrowRight size={16} />
+          </button>
+        </div>
+
+        {/* trust badges */}
+        <div className="flex items-center gap-6" style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
+          {['설치 불필요', '회원가입 없음', '즉시 사용 가능'].map((t) => (
+            <span key={t} className="flex items-center gap-1.5">
+              <Check size={12} style={{ color: '#34d399' }} />
+              {t}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      {/* ── TEMPLATE GALLERY ── */}
+      <section className="px-8 pb-24 max-w-5xl mx-auto">
+        <p className="text-center text-sm font-semibold tracking-widest uppercase mb-8"
+          style={{ color: 'rgba(255,255,255,0.2)' }}>
+          4가지 프리미엄 템플릿
+        </p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {TEMPLATES.map(({ id, accent, label }) => {
+            const Tpl = TEMPLATE_MAP[id];
+            return (
+              <button
+                key={id}
+                onClick={onStart}
+                className="group relative rounded-2xl overflow-hidden transition-all hover:-translate-y-2 text-left"
+                style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+              >
+                {/* template thumbnail */}
+                <div style={{ width: THUMB, height: THUMB, overflow: 'hidden', position: 'relative' }}>
+                  <div style={{
+                    position: 'absolute', top: 0, left: 0,
+                    width: 1080, height: 1080,
+                    transform: `scale(${scale})`,
+                    transformOrigin: 'top left',
+                    pointerEvents: 'none',
+                  }}>
+                    <Tpl
+                      slide={DEMO_SLIDE}
+                      index={0}
+                      total={4}
+                      brandName="@cardflow"
+                      accentColor={accent}
+                    />
+                  </div>
+                </div>
+                {/* hover overlay */}
+                <div
+                  className="absolute inset-0 flex items-end p-3 opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)' }}
+                >
+                  <span className="text-white text-xs font-semibold">{label}</span>
+                </div>
+                {/* glow on hover */}
+                <div
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl"
+                  style={{ boxShadow: `inset 0 0 0 1.5px ${accent}66` }}
+                />
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ── FEATURES ── */}
+      <section className="px-8 pb-24 max-w-5xl mx-auto">
+        <div className="text-center mb-14">
+          <h2
+            className="font-black tracking-tight mb-4"
+            style={{ fontSize: 'clamp(1.8rem,4vw,2.75rem)' }}
+          >
+            필요한 모든 기능이
+            <span style={{
+              background: 'linear-gradient(135deg,#818cf8,#c084fc)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}> 한 곳에</span>
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: 17 }}>
+            기획부터 발행까지, 카드뉴스 제작의 전 과정을 자동화합니다
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {FEATURES.map(({ icon: Icon, title, desc, color, bg }) => (
+            <div
+              key={title}
+              className="rounded-2xl p-6 transition-all hover:-translate-y-1"
+              style={{
+                background: bg,
+                border: '1px solid rgba(255,255,255,0.07)',
+              }}
+            >
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
+                style={{ background: `${color}22` }}
+              >
+                <Icon size={21} style={{ color }} />
+              </div>
+              <h3 className="font-bold text-lg text-white mb-2">{title}</h3>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap"
+                style={{ color: 'rgba(255,255,255,0.45)' }}>
+                {desc}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ── */}
+      <section className="px-8 pb-24 max-w-5xl mx-auto">
+        <div className="text-center mb-14">
+          <h2
+            className="font-black tracking-tight mb-4"
+            style={{ fontSize: 'clamp(1.8rem,4vw,2.75rem)' }}
+          >
+            <span style={{
+              background: 'linear-gradient(135deg,#22d3ee,#6366f1)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}>3단계</span>로 끝나는 카드뉴스
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {STEPS.map(({ num, title, desc, color }, i) => (
+            <div key={num} className="relative flex flex-col items-center text-center">
+              {/* connector line */}
+              {i < STEPS.length - 1 && (
+                <div
+                  className="hidden md:block absolute top-10 left-[calc(50%+52px)] right-0 h-px"
+                  style={{ background: 'rgba(255,255,255,0.06)' }}
+                />
+              )}
+              <div
+                className="w-20 h-20 rounded-2xl flex items-center justify-center font-black text-3xl mb-5"
+                style={{
+                  background: `${color}18`,
+                  border: `1px solid ${color}30`,
+                  color,
+                }}
+              >
+                {num}
+              </div>
+              <h3 className="font-bold text-xl text-white mb-2">{title}</h3>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap"
+                style={{ color: 'rgba(255,255,255,0.4)' }}>
+                {desc}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── FINAL CTA ── */}
+      <section className="px-8 pb-32 max-w-3xl mx-auto">
+        <div
+          className="relative rounded-3xl p-16 text-center overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.08) 100%)', border: '1px solid rgba(99,102,241,0.2)' }}
+        >
+          {/* glow */}
+          <div style={{
+            position: 'absolute', top: -60, right: -60,
+            width: 240, height: 240,
+            background: 'radial-gradient(circle, rgba(99,102,241,0.25), transparent 70%)',
+          }} />
+
+          <h2
+            className="relative font-black tracking-tight mb-4"
+            style={{ fontSize: 'clamp(1.8rem,4vw,2.5rem)' }}
+          >
+            지금 바로 시작하세요
+          </h2>
+          <p className="relative text-lg mb-10"
+            style={{ color: 'rgba(255,255,255,0.45)' }}>
+            설치 없이, 회원가입 없이.<br />브라우저에서 바로 사용 가능합니다.
+          </p>
+          <button
+            onClick={onStart}
+            className="relative inline-flex items-center gap-3 px-10 py-5 rounded-2xl text-white font-bold text-lg transition-all hover:-translate-y-1"
+            style={{
+              background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+              boxShadow: '0 12px 40px rgba(99,102,241,0.4)',
+            }}
+          >
+            <Sparkles size={20} />
+            무료로 카드뉴스 만들기
+          </button>
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer
+        className="py-8 px-8 text-center text-sm"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.18)' }}
+      >
+        CardFlow — AI 기반 인스타그램 카드뉴스 자동화 툴
+      </footer>
+    </div>
+  );
 }
 
-interface LongtailContent {
-  id: string;
-  title: string;
-  slug: string;
-  meta_description: string;
-  keywords: string[];
-  view_count: number;
-}
-
+/* ─── Root app with routing ─── */
 function App() {
-  const [buses, setBuses] = useState<Service[]>([]);
-  const [filteredBuses, setFilteredBuses] = useState<Service[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [longtailPages, setLongtailPages] = useState<LongtailContent[]>([]);
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [longtailSlug, setLongtailSlug] = useState<string | null>(null);
-  const [stats, setStats] = useState({ total: 0, updated: 0 });
+  const [showEditor, setShowEditor] = useState(false);
 
   useEffect(() => {
-    loadBuses();
-    loadCategories();
-    loadLongtailPages();
-    loadStats();
-
-    const handleHashChange = () => {
-      const hash = window.location.hash.slice(1);
-      if (hash.startsWith('page/')) {
-        const slug = hash.replace('page/', '');
-        setLongtailSlug(slug);
-      } else {
-        setLongtailSlug(null);
-      }
+    const handle = () => {
+      setShowEditor(window.location.hash.slice(1) === 'cardnews');
     };
-
-    handleHashChange();
-    window.addEventListener('hashchange', handleHashChange);
-
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange);
-    };
+    handle();
+    window.addEventListener('hashchange', handle);
+    return () => window.removeEventListener('hashchange', handle);
   }, []);
 
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      const filtered = buses.filter(bus =>
-        bus.service_number?.includes(searchQuery) ||
-        bus.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        bus.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredBuses(filtered);
-    } else {
-      setFilteredBuses(buses);
-    }
-  }, [searchQuery, buses]);
-
-  const loadBuses = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('services')
-        .select('*')
-        .eq('is_active', true)
-        .not('service_number', 'is', null)
-        .order('service_number');
-
-      if (error) {
-        console.error('Error loading buses:', error);
-        return;
-      }
-
-      if (data) {
-        setBuses(data);
-        setFilteredBuses(data);
-      }
-    } catch (error) {
-      console.error('Failed to load buses:', error);
-    }
+  const openEditor = () => {
+    window.location.hash = 'cardnews';
+    setShowEditor(true);
   };
 
-  const loadCategories = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('service_categories')
-        .select('*')
-        .order('name');
-
-      if (error) {
-        console.error('Error loading categories:', error);
-        return;
-      }
-
-      if (data) {
-        setCategories(data);
-      }
-    } catch (error) {
-      console.error('Failed to load categories:', error);
-    }
-  };
-
-  const loadLongtailPages = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('longtail_content_pages')
-        .select('id, title, slug, meta_description, keywords, view_count')
-        .eq('is_published', true)
-        .order('view_count', { ascending: false })
-        .limit(20);
-
-      if (error) {
-        console.error('Error loading longtail pages:', error);
-        return;
-      }
-
-      if (data) {
-        setLongtailPages(data);
-      }
-    } catch (error) {
-      console.error('Failed to load longtail pages:', error);
-    }
-  };
-
-  const loadStats = async () => {
-    try {
-      const { count: total, error: totalError } = await supabase
-        .from('services')
-        .select('*', { count: 'exact', head: true })
-        .not('service_number', 'is', null);
-
-      if (totalError) {
-        console.error('Error loading total stats:', totalError);
-        return;
-      }
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const { count: updated, error: updatedError } = await supabase
-        .from('services')
-        .select('*', { count: 'exact', head: true })
-        .not('service_number', 'is', null)
-        .gte('updated_at', today.toISOString());
-
-      if (updatedError) {
-        console.error('Error loading updated stats:', updatedError);
-        return;
-      }
-
-      setStats({
-        total: total || 0,
-        updated: updated || 0
-      });
-    } catch (error) {
-      console.error('Failed to load stats:', error);
-    }
-  };
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-  };
-
-  const groupBusesByRegion = () => {
-    const regionOrder = [
-      '서울 간선버스',
-      '서울 지선버스',
-      '서울 광역버스',
-      '서울 마을버스',
-      '서울 공항버스',
-      '경기 버스',
-      '인천 버스',
-      '기타 지역'
-    ];
-
-    const groups: { [key: string]: Service[] } = {};
-    regionOrder.forEach(region => {
-      groups[region] = [];
-    });
-
-    filteredBuses.forEach(bus => {
-      const keywords = bus.seo_keywords || [];
-      const name = bus.name || '';
-      const desc = bus.description || '';
-
-      if (keywords.includes('공항') || name.includes('공항')) {
-        groups['서울 공항버스'].push(bus);
-      } else if (keywords.includes('마을') || name.includes('마을')) {
-        groups['서울 마을버스'].push(bus);
-      } else if (keywords.includes('간선') || name.includes('간선')) {
-        groups['서울 간선버스'].push(bus);
-      } else if (keywords.includes('지선') || name.includes('지선')) {
-        groups['서울 지선버스'].push(bus);
-      } else if (keywords.includes('광역') || name.includes('광역')) {
-        groups['서울 광역버스'].push(bus);
-      } else if (keywords.includes('경기') || name.includes('경기') || desc.includes('경기')) {
-        groups['경기 버스'].push(bus);
-      } else if (keywords.includes('인천') || name.includes('인천') || desc.includes('인천')) {
-        groups['인천 버스'].push(bus);
-      } else {
-        groups['기타 지역'].push(bus);
-      }
-    });
-
-    return regionOrder
-      .map(region => [region, groups[region]] as [string, Service[]])
-      .filter(([_, buses]) => buses.length > 0);
-  };
-
-  if (longtailSlug) {
+  if (showEditor) {
     return (
-      <LongtailContentPage
-        slug={longtailSlug}
+      <CardNewsApp
         onBack={() => {
           window.location.hash = '';
-          setLongtailSlug(null);
+          setShowEditor(false);
         }}
       />
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-3 rounded-2xl shadow-lg">
-                <Bus className="text-white" size={32} />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  전국 교통정보 플랫폼
-                </h1>
-                <p className="text-gray-600 text-sm mt-1">
-                  <Activity className="inline mr-1" size={14} />
-                  고속버스 · 시외버스 · GTX · 지하철 시간표
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
-                <div className="text-xs text-gray-600">등록된 노선</div>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-green-600">{stats.updated}</div>
-                <div className="text-xs text-gray-600">오늘 업데이트</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              placeholder="지역, 노선, 버스 번호를 검색하세요 (예: 서울 고속버스, GTX, 160번)"
-              className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-            />
-          </div>
-        </div>
-      </div>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {!searchQuery && (
-          <>
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">🚌 주요 교통수단</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-2xl p-6 transition-all cursor-pointer group shadow-lg hover:shadow-xl transform hover:scale-105">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="bg-white bg-opacity-20 backdrop-blur-sm p-4 rounded-2xl mb-3 transition-all group-hover:bg-opacity-30">
-                      <Bus className="text-white" size={32} />
-                    </div>
-                    <h3 className="font-bold text-white text-lg mb-1">시내버스</h3>
-                    <p className="text-xs text-blue-100">전국 시내버스 노선</p>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-2xl p-6 transition-all cursor-pointer group shadow-lg hover:shadow-xl transform hover:scale-105">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="bg-white bg-opacity-20 backdrop-blur-sm p-4 rounded-2xl mb-3 transition-all group-hover:bg-opacity-30">
-                      <Car className="text-white" size={32} />
-                    </div>
-                    <h3 className="font-bold text-white text-lg mb-1">고속버스</h3>
-                    <p className="text-xs text-green-100">고속·시외버스</p>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 rounded-2xl p-6 transition-all cursor-pointer group shadow-lg hover:shadow-xl transform hover:scale-105">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="bg-white bg-opacity-20 backdrop-blur-sm p-4 rounded-2xl mb-3 transition-all group-hover:bg-opacity-30">
-                      <Train className="text-white" size={32} />
-                    </div>
-                    <h3 className="font-bold text-white text-lg mb-1">지하철</h3>
-                    <p className="text-xs text-purple-100">수도권 지하철</p>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-2xl p-6 transition-all cursor-pointer group shadow-lg hover:shadow-xl transform hover:scale-105">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="bg-white bg-opacity-20 backdrop-blur-sm p-4 rounded-2xl mb-3 transition-all group-hover:bg-opacity-30">
-                      <Zap className="text-white" size={32} />
-                    </div>
-                    <h3 className="font-bold text-white text-lg mb-1">GTX</h3>
-                    <p className="text-xs text-orange-100">수도권 광역급행철도</p>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 rounded-2xl p-6 transition-all cursor-pointer group shadow-lg hover:shadow-xl transform hover:scale-105">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="bg-white bg-opacity-20 backdrop-blur-sm p-4 rounded-2xl mb-3 transition-all group-hover:bg-opacity-30">
-                      <Plane className="text-white" size={32} />
-                    </div>
-                    <h3 className="font-bold text-white text-lg mb-1">공항버스</h3>
-                    <p className="text-xs text-cyan-100">공항 리무진</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow">
-                <div className="flex items-center gap-3 mb-2">
-                  <Clock size={28} />
-                  <h3 className="text-lg font-bold">시간표</h3>
-                </div>
-                <p className="text-blue-100 text-sm">
-                  첫차·막차·배차간격
-                </p>
-              </div>
-              <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow">
-                <div className="flex items-center gap-3 mb-2">
-                  <MapPin size={28} />
-                  <h3 className="text-lg font-bold">노선정보</h3>
-                </div>
-                <p className="text-green-100 text-sm">
-                  상세 경유지·정류장
-                </p>
-              </div>
-              <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow">
-                <div className="flex items-center gap-3 mb-2">
-                  <Activity size={28} />
-                  <h3 className="text-lg font-bold">실시간</h3>
-                </div>
-                <p className="text-orange-100 text-sm">
-                  매일 자동 업데이트
-                </p>
-              </div>
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow">
-                <div className="flex items-center gap-3 mb-2">
-                  <TrendingUp size={28} />
-                  <h3 className="text-lg font-bold">인기검색</h3>
-                </div>
-                <p className="text-purple-100 text-sm">
-                  많이 찾는 노선정보
-                </p>
-              </div>
-            </div>
-
-            {longtailPages.length > 0 && (
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold text-gray-900">인기 노선 가이드</h2>
-                  <span className="text-sm text-gray-600">실제 이용자들이 많이 찾는 정보</span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {longtailPages.map((page) => (
-                    <a
-                      key={page.id}
-                      href={`#page/${page.slug}`}
-                      className="bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-500 rounded-xl p-5 transition-all group shadow-sm hover:shadow-md"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="bg-blue-100 group-hover:bg-blue-200 p-2 rounded-lg transition-colors flex-shrink-0">
-                          <Bus className="text-blue-600" size={20} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors line-clamp-2">
-                            {page.title}
-                          </h3>
-                          <p className="text-sm text-gray-600 line-clamp-2 mb-2">
-                            {page.meta_description}
-                          </p>
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <Activity size={12} />
-                            <span>{page.view_count.toLocaleString()}회 조회</span>
-                          </div>
-                        </div>
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {searchQuery && filteredBuses.length === 0 && (
-          <div className="text-center py-16 bg-white rounded-2xl shadow-lg">
-            <Bus size={64} className="mx-auto text-gray-300 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              검색 결과가 없습니다
-            </h3>
-            <p className="text-gray-600">
-              "{searchQuery}"에 해당하는 버스를 찾을 수 없습니다
-            </p>
-          </div>
-        )}
-
-        {groupBusesByRegion().map(([region, regionBuses]) => (
-          <div key={region} className="mb-10">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 mb-6 shadow-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <MapPin className="text-white" size={28} />
-                  <div>
-                    <h2 className="text-2xl font-bold text-white">{region}</h2>
-                    <p className="text-blue-100 text-sm mt-1">
-                      {regionBuses.length}개 노선 운행 중
-                    </p>
-                  </div>
-                </div>
-                <div className="bg-white bg-opacity-20 backdrop-blur-sm px-4 py-2 rounded-lg">
-                  <div className="text-white text-lg font-bold">
-                    {regionBuses.length}
-                  </div>
-                  <div className="text-blue-100 text-xs">노선</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {regionBuses.map((bus) => (
-                <button
-                  key={bus.id}
-                  onClick={() => setSelectedService(bus)}
-                  className="bg-white hover:bg-blue-50 border-2 border-gray-200 hover:border-blue-500 rounded-xl p-4 transition-all transform hover:scale-105 hover:shadow-lg group"
-                >
-                  <div className="flex flex-col items-center">
-                    <Bus className="text-blue-600 group-hover:text-blue-700 mb-2" size={28} />
-                    <div className="text-xl font-bold text-gray-900 mb-1">
-                      {bus.service_number}
-                    </div>
-                    <div className="text-xs text-gray-600 text-center line-clamp-2">
-                      {bus.description}
-                    </div>
-                    <div className="mt-2 text-xs text-blue-600 font-medium">
-                      상세보기 →
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-
-        {!searchQuery && filteredBuses.length === 0 && (
-          <div className="text-center py-16 bg-white rounded-2xl shadow-lg">
-            <Bus size={64} className="mx-auto text-gray-300 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              아직 등록된 버스가 없습니다
-            </h3>
-            <p className="text-gray-600 mb-6">
-              관리자 패널에서 버스 정보를 수집하세요
-            </p>
-            <a
-              href="#bus-test"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-            >
-              <Bus size={20} />
-              버스 데이터 수집하기
-            </a>
-          </div>
-        )}
-      </main>
-
-      {selectedService && (
-        <ServiceDetail
-          service={selectedService}
-          onClose={() => setSelectedService(null)}
-        />
-      )}
-
-      <footer className="bg-white border-t border-gray-200 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center text-gray-600 text-sm">
-            <p className="mb-2 font-semibold text-gray-900">전국 교통정보 통합 플랫폼</p>
-            <p className="mb-1">고속버스·시외버스·GTX·지하철 시간표 및 노선 정보 제공</p>
-            <p className="text-xs text-gray-500">매일 자동 업데이트 · 실시간 정보 제공</p>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
+  return <LandingPage onStart={openEditor} />;
 }
 
 export default App;

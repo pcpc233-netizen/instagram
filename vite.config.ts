@@ -29,7 +29,16 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
+      port: 5174,
       proxy: {
+        '/api/cardnews': {
+          target: 'http://localhost:5175',
+          changeOrigin: true,
+        },
+        '/api/buffer-proxy': {
+          target: 'http://localhost:5175',
+          changeOrigin: true,
+        },
         '/api/bus': {
           target: 'http://ws.bus.go.kr',
           changeOrigin: true,
